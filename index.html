@@ -215,7 +215,7 @@ document.getElementById('loading').classList.add('show');
 try{
 const isMock=typeof liff==='undefined'||!liff.isInClient?.();
 if(!isMock){await liff.init({liffId:'2009625797-JxUAN9t6'});await liff.sendMessages([{type:'text',text:buildText({name,phone,notes,items,total,pickupTime:selectedTime,payment:payLabel})}]);}
-setTimeout(()=>{
+fetch('https://script.google.com/macros/s/AKfycbw52JFIqDKoFjLnAFNl9MyCwAOSZfMdwJ-OBk0RD26bgGLQK3qvEiEmrwgc-J-bpKr-dg/exec',{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({name,phone,items,total,pickupTime:selectedTime,payment:payLabel,notes})}).catch(()=>{});setTimeout(()=>{
 document.getElementById('loading').classList.remove('show');
 document.getElementById('formScreen').style.display='none';
 document.getElementById('successScreen').classList.add('show');
