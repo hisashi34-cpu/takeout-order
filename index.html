@@ -214,7 +214,7 @@ const payLabel=PAYMENTS.find(p=>p.id===selectedPayment)?.name||'';
 document.getElementById('loading').classList.add('show');
 try{
 const isMock=typeof liff==='undefined'||!liff.isInClient?.();
-if(!isMock){await liff.init({liffId:'YOUR_LIFF_ID'});await liff.sendMessages([{type:'text',text:buildText({name,phone,notes,items,total,pickupTime:selectedTime,payment:payLabel})}]);}
+if(!isMock){await liff.init({liffId:'2009625797-JxUAN9t6'});await liff.sendMessages([{type:'text',text:buildText({name,phone,notes,items,total,pickupTime:selectedTime,payment:payLabel})}]);}
 setTimeout(()=>{
 document.getElementById('loading').classList.remove('show');
 document.getElementById('formScreen').style.display='none';
