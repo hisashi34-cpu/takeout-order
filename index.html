@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テイクアウト注文</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/liff/2.22.3/sdk.min.js"></script>
+<style>
+:root{--bg:#f5f4f0;--surface:#fff;--surface2:#f0ede6;--border:#e0dbd0;--accent:#c8821a;--text:#1a1714;--text-muted:#8a8070;--success:#3a9e68;--error:#d44040;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px 16px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.header-icon{width:44px;height:44px;background:linear-gradient(135deg,#d4a76a 0%,#c8821a 50%,#a06818 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(200,130,26,.30)}
+.header-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:18px;font-weight:900}
+.header-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.progress-bar{max-width:480px;margin:0 auto;padding:12px 20px 0;display:flex;gap:4px}
+.progress-bar span{flex:1;height:3px;background:var(--border);border-radius:2px;transition:background .3s}
+.progress-bar span.active{background:var(--accent)}
+.main{max-width:480px;margin:0 auto;padding:24px 20px 0}
+.section{margin-bottom:28px}
+.section-label{font-family:'Zen Kaku Gothic New',sans-serif;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;margin-bottom:12px}
+.menu-grid{display:flex;flex-direction:column;gap:10px}
+.menu-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:stretch;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.menu-card.has-qty{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.menu-thumb{width:88px;flex-shrink:0;position:relative;overflow:hidden;background:var(--surface2)}
+.menu-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s;z-index:1}
+.menu-card.has-qty .menu-thumb img{transform:scale(1.05)}
+.menu-thumb-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--surface2);z-index:0}
+.qty-badge{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font-family:'Zen Kaku Gothic New',sans-serif;font-size:11px;font-weight:900;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;opacity:0;transform:scale(.6);transition:opacity .2s,transform .2s;pointer-events:none}
+.menu-card.has-qty .qty-badge{opacity:1;transform:scale(1)}
+.menu-info{flex:1;min-width:0;padding:12px 10px 12px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.menu-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-desc{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-price{font-size:13px;color:var(--accent);font-weight:700;margin-top:2px}
+.menu-price-tax{font-size:10px;color:var(--text-muted);font-weight:400;margin-left:2px}
+.qty-control{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 14px 12px 4px;flex-shrink:0}
+.qty-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.qty-btn:active{background:var(--border)}
+.qty-btn.plus{border-color:var(--accent);color:var(--accent)}
+.qty-num{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:16px;min-width:20px;text-align:center}
+.order-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.summary-row:last-child{border-bottom:none}
+.summary-item-left{display:flex;align-items:center;gap:8px}
+.summary-thumb{width:28px;height:28px;border-radius:6px;object-fit:cover;background:var(--surface2)}
+.summary-total{font-weight:700;font-size:15px}
+.summary-total-amount{color:var(--accent);font-family:'Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:900}
+.field{margin-bottom:14px}
+.field-label{font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.required-badge{background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px}
+.field input,.field textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:15px;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-muted)}
+.field textarea{resize:none;height:80px;line-height:1.5}
+.time-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.time-slot{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 4px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.time-slot:active,.time-slot.selected{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.payment-options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pay-option{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.pay-option:active,.pay-option.selected{background:var(--surface2);border-color:var(--accent)}
+.pay-icon{font-size:22px;display:block;margin-bottom:4px}
+.pay-name{font-size:12px;font-weight:700}
+.pay-sub{font-size:10px;color:var(--text-muted);margin-top:2px}
+.submit-area{padding:0 20px;max-width:480px;margin:0 auto 20px}
+.btn-submit{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:18px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s,transform .1s;-webkit-tap-highlight-color:transparent}
+.btn-submit:disabled{opacity:.35;cursor:not-allowed}
+.btn-submit:not(:disabled):active{transform:scale(.98);opacity:.9}
+.submit-note{text-align:center;font-size:11px;color:var(--text-muted);margin-top:10px}
+.success-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:40px 30px;text-align:center}
+.success-screen.show{display:flex}
+.success-icon{width:80px;height:80px;background:var(--success);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px}
+.success-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:22px;font-weight:900}
+.success-msg{font-size:14px;color:var(--text-muted);line-height:1.7}
+.success-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;width:100%;max-width:320px;font-size:13px;line-height:1.8;text-align:left}
+.success-detail strong{color:var(--accent)}
+.btn-libepoint{display:inline-block;margin-top:16px;background:#ff6600;color:#fff;border:none;border-radius:12px;padding:14px 28px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:15px;font-weight:900;cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s;-webkit-tap-highlight-color:transparent}
+.btn-libepoint:active{transform:scale(.98);opacity:.9}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(245,244,240,.88);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loading-overlay.show{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--error);color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div style="font-size:13px;color:var(--text-muted)">注文を送信中...</div></div>
+<div class="toast" id="toast"></div>
+
+<div id="formScreen">
+<div class="header">
+<div class="header-inner">
+<div class="header-icon"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 22h12a2 2 0 002-2V11H5v9a2 2 0 002 2z" fill="#fff" opacity=".95"/><path d="M4 8.5A1.5 1.5 0 015.5 7h15a1.5 1.5 0 010 3h-15A1.5 1.5 0 014 8.5z" fill="#fff"/><path d="M19 11h2.5a2.5 2.5 0 010 5H19" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M9.5 4c0 0 .5-1.5 0-2.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><path d="M13 3.5c0 0 .5-1.8 0-3" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".5"/><path d="M16.5 4c0 0 .5-1.5 0-2.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><circle cx="10" cy="16" r="1.2" fill="#d4a76a"/><circle cx="14" cy="14.5" r="1" fill="#c8821a" opacity=".6"/><circle cx="12" cy="17.5" r=".8" fill="#d4a76a" opacity=".5"/></svg></div>
+<div><div class="header-title">テイクアウト注文</div><div class="header-sub">ダミー食堂 — 仙台泉店</div></div>
+</div>
+<div class="progress-bar"><span class="active" id="p1"></span><span id="p2"></span><span id="p3"></span></div>
+</div>
+
+<div class="main">
+<div class="section"><div class="section-label">🍽 メニューを選ぶ</div><div class="menu-grid" id="menuGrid"></div></div>
+<div class="section" id="summarySection" style="display:none"><div class="section-label">🧾 注文内容</div><div class="order-summary" id="orderSummary"></div></div>
+<div class="section"><div class="section-label">🕐 受取希望時間</div><div class="time-slots" id="timeSlots"></div></div>
+<div class="section">
+<div class="section-label">👤 お客様情報</div>
+<div class="field"><div class="field-label">お名前 <span class="required-badge">必須</span></div><input type="text" id="name" placeholder="例:田中 太郎" autocomplete="name"></div>
+<div class="field"><div class="field-label">電話番号 <span class="required-badge">必須</span></div><input type="tel" id="phone" placeholder="例:090-1234-5678" autocomplete="tel"></div>
+</div>
+<div class="section"><div class="section-label">💳 支払い方法</div><div class="payment-options" id="paymentOptions"></div></div>
+<div class="section"><div class="section-label">📝 備考・アレルギー</div><div class="field"><textarea id="notes" placeholder="アレルギーや辛さ調整など、ご要望があればご記入ください"></textarea></div></div>
+</div>
+<div class="submit-area"><button class="btn-submit" id="submitBtn" disabled>注文を確定する</button><div class="submit-note">確認後、LINEにて受付完了をお知らせします</div></div>
+</div>
+
+<div class="success-screen" id="successScreen">
+<div class="success-icon">✓</div>
+<div class="success-title">注文が完了しました</div>
+<div class="success-msg">ご注文ありがとうございます。<br>受付完了の通知をLINEに送ります。<br>お時間になりましたらご来店ください。</div>
+<div class="success-detail" id="successDetail"></div>
+<div id="libepointLink" style="display:none;">
+<button class="btn-libepoint" id="libepointBtn" onclick="goToLibepoint()">📱 リベポイントで送金する</button>
+</div>
+</div>
+
+<script>
+const MENUS=[
+{id:1,emoji:'🍱',name:'日替わり弁当', price:680,desc:'毎日変わる旬の食材', img:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=200&q=70&auto=format&fit=crop'},
+{id:2,emoji:'🍗',name:'唐揚げ弁当', price:750,desc:'ジューシーな自家製唐揚げ',img:'https://images.unsplash.com/photo-1562967914-608f82629710?w=200&q=70&auto=format&fit=crop'},
+{id:3,emoji:'🐟',name:'鮭定食弁当', price:720,desc:'塩焼き鮭とご飯', img:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&q=70&auto=format&fit=crop'},
+{id:4,emoji:'🥩',name:'焼肉弁当', price:890,desc:'国産牛の甘辛タレ焼き', img:'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=70&auto=format&fit=crop'},
+{id:5,emoji:'🍛',name:'カレー弁当', price:680,desc:'スパイスが香る欧風カレー',img:'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=200&q=70&auto=format'},
+{id:6,emoji:'🥗',name:'サラダセット', price:580,desc:'新鮮野菜とドレッシング', img:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=70&auto=format&fit=crop'},
+];
+const TIMES=['11:30','11:45','12:00','12:15','12:30','12:45','13:00','13:15','13:30'];
+const PAYMENTS=[
+  {id:'cash',icon:'💴',name:'現金',sub:'来店時お支払い'},
+  {id:'paypay',icon:'📱',name:'PayPay',sub:'来店時QR読取'},
+  {id:'card',icon:'💳',name:'クレジット',sub:'来店時カード'},
+  {id:'libepoint',icon:'🦁',name:'リベポイント',sub:'リベシティで送金'}
+];
+const LIBEPOINT_URL = 'https://libecity.com/app_redirect?path=mypage/points?send_uid=bnpvGN1IfgeL62iJllSU0ZDnLdR2';
+
+const cart={};let selectedTime=null,selectedPayment=null;
+
+document.addEventListener('DOMContentLoaded',()=>{renderMenus();renderTimes();renderPayments();updateProgress();});
+
+function renderMenus(){
+document.getElementById('menuGrid').innerHTML=MENUS.map(m=>`
+<div class="menu-card ${m.qty>0?'has-qty':''}" id="card-${m.id}">
+<div class="menu-thumb">
+<div class="menu-thumb-fallback">${m.emoji}</div>
+<img src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.style.display='none'">
+<div class="qty-badge" id="badge-${m.id}">0</div>
+</div>
+<div class="menu-info">
+<div class="menu-name">${m.name}</div>
+<div class="menu-desc">${m.desc}</div>
+<div class="menu-price">¥${m.price.toLocaleString()}<span class="menu-price-tax">(税込)</span></div>
+</div>
+<div class="qty-control">
+<button class="qty-btn plus" onclick="changeQty(${m.id},1)">+</button>
+<div class="qty-num" id="qty-${m.id}">0</div>
+<button class="qty-btn minus" onclick="changeQty(${m.id},-1)">-</button>
+</div>
+</div>`).join('');
+}
+
+function changeQty(id,delta){
+cart[id]=Math.max(0,(cart[id]||0)+delta);
+document.getElementById('qty-'+id).textContent=cart[id];
+document.getElementById('badge-'+id).textContent=cart[id];
+document.getElementById('card-'+id).classList.toggle('has-qty',cart[id]>0);
+updateSummary();updateProgress();validateForm();
+}
+
+function updateSummary(){
+const section=document.getElementById('summarySection');
+const items=MENUS.filter(m=>(cart[m.id]||0)>0);
+if(!items.length){section.style.display='none';return;}
+section.style.display='block';let total=0;
+const rows=items.map(m=>{const sub=m.price*cart[m.id];total+=sub;
+return`<div class="summary-row"><div class="summary-item-left"><img class="summary-thumb" src="${m.img}" onerror="this.style.display='none'"><span>${m.name} × ${cart[m.id]}</span></div><span>¥${sub.toLocaleString()}</span></div>`;
+});
+rows.push(`<div class="summary-row"><span class="summary-total">合計</span><span class="summary-total-amount">¥${total.toLocaleString()}</span></div>`);
+document.getElementById('orderSummary').innerHTML=rows.join('');
+}
+
+function renderTimes(){document.getElementById('timeSlots').innerHTML=TIMES.map(t=>`<div class="time-slot" onclick="selectTime('${t}',this)">${t}</div>`).join('');}
+function selectTime(t,el){document.querySelectorAll('.time-slot').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');selectedTime=t;updateProgress();validateForm();}
+function renderPayments(){document.getElementById('paymentOptions').innerHTML=PAYMENTS.map(p=>`<div class="pay-option" onclick="selectPayment('${p.id}',this)"><span class="pay-icon">${p.icon}</span><div class="pay-name">${p.name}</div><div class="pay-sub">${p.sub}</div></div>`).join('');}
+function selectPayment(id,el){document.querySelectorAll('.pay-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');selectedPayment=id;updateProgress();validateForm();}
+
+function updateProgress(){
+const hm=Object.values(cart).some(v=>v>0),ht=!!selectedTime,hp=!!selectedPayment;
+document.getElementById('p1').classList.toggle('active',hm);
+document.getElementById('p2').classList.toggle('active',hm&&ht);
+document.getElementById('p3').classList.toggle('active',hm&&ht&&hp);
+}
+function validateForm(){
+const ok=Object.values(cart).some(v=>v>0)&&selectedTime&&document.getElementById('name').value.trim()&&document.getElementById('phone').value.trim()&&selectedPayment;
+document.getElementById('submitBtn').disabled=!ok;
+}
+document.getElementById('name').addEventListener('input',validateForm);
+document.getElementById('phone').addEventListener('input',validateForm);
+
+document.getElementById('submitBtn').addEventListener('click',async()=>{
+const name=document.getElementById('name').value.trim(),phone=document.getElementById('phone').value.trim(),notes=document.getElementById('notes').value.trim();
+const items=MENUS.filter(m=>(cart[m.id]||0)>0).map(m=>({name:m.name,qty:cart[m.id],price:m.price,subtotal:m.price*cart[m.id]}));
+const total=items.reduce((s,i)=>s+i.subtotal,0);
+const payLabel=PAYMENTS.find(p=>p.id===selectedPayment)?.name||'';
+
+document.getElementById('loading').classList.add('show');
+try{
+const isMock=typeof liff==='undefined'||!liff.isInClient?.();
+if(!isMock){await liff.init({liffId:'YOUR_LIFF_ID'});await liff.sendMessages([{type:'text',text:buildText({name,phone,notes,items,total,pickupTime:selectedTime,payment:payLabel})}]);}
+setTimeout(()=>{
+document.getElementById('loading').classList.remove('show');
+document.getElementById('formScreen').style.display='none';
+document.getElementById('successScreen').classList.add('show');
+document.getElementById('successDetail').innerHTML=`<strong>受取時間:</strong>${selectedTime}<br><strong>お名前:</strong>${name}<br><strong>合計:</strong>¥${total.toLocaleString()}<br><strong>支払い:</strong>${payLabel}`;
+
+// リベポイント選択時にリベシティ送金リンクを表示
+if(selectedPayment==='libepoint'){
+  document.getElementById('libepointLink').style.display='block';
+}
+},1500);
+}catch(e){document.getElementById('loading').classList.remove('show');showToast('送信に失敗しました。もう一度お試しください。');}
+});
+function buildText(o){return`【テイクアウト注文】\n---\n${o.items.map(i=>`・${i.name} × ${i.qty} ¥${i.subtotal.toLocaleString()}`).join('\n')}\n---\n合計:¥${o.total.toLocaleString()}\n受取:${o.pickupTime}\n支払:${o.payment}\n名前:${o.name}\n電話:${o.phone}${o.notes?'\n備考:'+o.notes:''}`;
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function goToLibepoint(){
+var url='https://libecity.com/app_redirect?path=mypage/points%3Fsend_uid%3DbnpvGN1IfgeL62iJllSU0ZDnLdR2';
+try{if(typeof liff!=='undefined'&&liff.isInClient&&liff.isInClient()){liff.openWindow({url:url,external:true});return;}}catch(e){}
+var w=window.open(url,'_blank');
+if(!w||w.closed){window.location.href=url;}
+}
+</script>
+</body>
+</html>
